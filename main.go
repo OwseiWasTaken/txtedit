@@ -178,6 +178,17 @@ func main(){
 			case "delete":
 				if (x!=len(line)) {
 					line = line[:x] + line[1+x:]
+				} else {
+					if (y+1!=len(file)) {
+						tbuf1 = file[y] // prev
+						tbuf2 = file[y+1] // now
+						//x = len(file[y+1])
+						file[y] = tbuf1+tbuf2
+						file = append(file[:y+1], file[y+2:]...)
+						//y--
+						line = file[y]
+						redraw()
+					}
 				}
 			case "NULL":
 				// key (KeyCode) [(KeyHint)] mappend to NULL
@@ -189,7 +200,9 @@ func main(){
 		file[y] = line
 	}
 	clear()
-	WriteFile("log", strings.Join(LOG, "\n"))
+	if len(LOG) > 0 {
+		WriteFile("log", strings.Join(LOG, "\n"))
+	}
 	WriteFile("out.txt", strings.Join(file, "\n"))
 
 	TerminEnd()
