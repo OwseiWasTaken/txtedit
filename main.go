@@ -1,3 +1,8 @@
+// this NEEDS
+//	· https://github.com/owseiwastaken/gutil
+//	· https://github.com/owseiwastaken/termin
+
+
 package main
 
 include "gutil"
@@ -24,12 +29,17 @@ func gtk ( w Window ) ( string ) {
 
 var (
 	line string // line cont
-	x int = 0// cursor pos
-	y int = 0
-	yl = func()(int){return len(spf("%v", y))}
+	// file []string // all lines
+
+	x int = 0// cursor pos in line
+	y int = 0// cursor pos in file
+
+	yl = func()(int){return len(spf("%v", y))} // len of line number
+
 	k string // key
-	running bool = true
-	tw string
+	running bool = true // end loop
+	log []string // logging NULL ocs
+	tw string // line ToWrite (prtln func)
 )
 
 include "control"
@@ -40,7 +50,8 @@ func main(){
 	CursorMode("I-beam")
 	var prtln = func()(){
 		tw = spf("%s%d %s", strings.Repeat(" ", 3-yl()), y+1, line)
-		wprint(Win, y, 0, tw+" "+spos(y,x+4))
+		wprint(Win, y, 0, tw+" ") // +" " to clear removed chars
+		wmove(Win, y, x+4)
 	}
 
 	for running{
