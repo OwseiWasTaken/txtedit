@@ -104,6 +104,17 @@ func main(){
 				if (x!=0) {
 					line = line[:x-1] + line[x:]
 					x--
+				} else {
+					if (y!=0) {
+						tbuf1 = file[y-1] // prev
+						tbuf2 = file[y] // now
+						x = len(file[y-1])
+						file[y-1] = tbuf1+tbuf2
+						file = append(file[:y], file[y+1:]...)
+						y--
+						line = file[y]
+						redraw()
+					}
 				}
 			case "left":
 				if (x!=0) {
