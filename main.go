@@ -13,6 +13,7 @@ func Compress( x []byte ) ( string ) {
 	for i:=0;i!=6;i++{
 		if (x[i] == 0) { break }
 		buff+=spf("%.3d,", x[i])
+		lk = append(lk, x[i])
 	}
 	return buff
 }
@@ -20,6 +21,7 @@ func Compress( x []byte ) ( string ) {
 
 func gtk ( w Window ) ( string ) {
 	x:=read(w)
+	lk = []byte{}
 	e, ok := Control[Compress(x)]
 	if (!ok) {
 		e = "NULL"
@@ -49,10 +51,11 @@ var (
 	k string // key
 	running bool = true // end loop
 
+	lk []byte// last key typed (for logging)
 	LOG []string// log
 
-	tbuf1 string // temporary buffer (for case enter)
-	tbuf2 string // temporary buffer (for case enter)
+	tbuf1 string // temporary buffer (for case enter;backspace)
+	tbuf2 string // temporary buffer (for case enter;backspace)
 	at int
 )
 
@@ -177,6 +180,8 @@ func main(){
 					line = line[:x] + line[1+x:]
 				}
 			case "NULL":
+				// key (KeyCode) [(KeyHint)] mappend to NULL
+				log(spf("key %v [%s] mapped to NULL", lk, string(lk)))
 			default:
 				line = line[:x] + k + line[x:]
 				x++
@@ -184,8 +189,8 @@ func main(){
 		file[y] = line
 	}
 	clear()
-	PS(line)
 	WriteFile("log", strings.Join(LOG, "\n"))
+	WriteFile("out.txt", strings.Join(file, "\n"))
 
 	TerminEnd()
 	CursorMode("block")
