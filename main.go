@@ -51,7 +51,8 @@ var (
 
 	LOG []string// log
 
-	tbuff string // temporary buffer (for case enter)
+	tbuf1 string // temporary buffer (for case enter)
+	tbuf2 string // temporary buffer (for case enter)
 	at int
 )
 
@@ -121,24 +122,30 @@ func main(){
 					x = len(line)
 				}
 			case "enter":
-				// TODO borked
-				// TODO redesign idea
-				//	file IS a string (...\n...\n...\n)
-				//	x = file[@]
-				//	y = count(file[:x], "\n")
-				//	cx = x-findlast@(file[:x], "\n") // cursor x
 				if (y!=termy){
-					y++
-					if len(line)==0 || y == len(file){
-						file = append(file, "")
+					if x == len(line) {
+						// dumb but it works
+						file = append(file[:y], append([]string{file[y]}, file[y:]...)...)
+						file[y+1] = ""
 					} else {
-						file[y] = ""
+						// >hel$lo
+						// hel, lo
+						// >file..., hel, $lo, ...file
+						tbuf1 = line[:x] // prev
+						tbuf2 = line[x:] // next
+						if len(file) > 1 {
+							file = append(file[:y], append([]string{tbuf1, tbuf2}, file[y+1:]...)...)
+						} else { // len(file) == 1
+							file = []string{tbuf1, tbuf2}
+						}
+						x = 0
 					}
+					y++
 					redraw()
-				}
-				line = file[y]
-				if len(line) < x{
-					x = len(line)
+					line = file[y]
+					if len(line) < x{
+						x = len(line)
+					}
 				}
 			case "down":
 				if (y!=termy){
