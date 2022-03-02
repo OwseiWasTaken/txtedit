@@ -27,19 +27,56 @@ func gtk ( w Window ) ( string ) {
 	return e
 }
 
+func log ( add string ) () {
+	adda := strings.Split(add, "\n")
+	if len(adda) > 1{
+		LOG = append(LOG, "")
+	}
+	for i:=0;i<len(adda);i++ {
+		LOG = append(LOG, adda[i])
+	}
+}
+
 var (
 	line string // line cont
-	// file []string // all lines
+	file = []string{} // all lines
 
 	x int = 0// cursor pos in line
 	y int = 0// cursor pos in file
 
-	yl = func()(int){return len(spf("%v", y))} // len of line number
+	yl = func()(int){return len(spf("%v", y+1))} // len of line number
 
 	k string // key
 	running bool = true // end loop
-	log []string // logging NULL ocs
+
+	LOG []string// log
+
+	tbuff string // temporary buffer (for case enter)
+	at int
 )
+
+func redraw () () {
+	clear()
+	for i:=0;i<len(file);i++{
+		wprint(Win, i, 0,
+			spf(
+				"%s%d %s",
+				strings.Repeat(" ", 3-(len(spf("%v", i+1)))), i+1, file[i],
+			),
+		)
+	}
+	wmove(Win, y, x+4)
+}
+
+func Exec (c string) (string) {
+	switch (c) {
+		case "quit", "q":
+			running = false
+		default:
+			return spf("%sNot an editor command: %s%s", RGB(255, 0, 0), c, RGB(255,255,255))
+	}
+	return ""
+}
 
 include "control"
 func main(){
@@ -55,11 +92,12 @@ func main(){
 		wmove(Win, y, x+4)
 	}
 
+	file = append(file, line)
 	for running{
 		prtln()
 		k = gtk(Win)
 		switch (k){
-			case "enter":
+			case "f9":
 				running = false
 			case "backspace":
 				if (x!=0) {
@@ -74,6 +112,45 @@ func main(){
 				if (x!=len(line)) {
 					x++
 				}
+			case "up":
+				if (y!=0){
+					y--
+					line = file[y]
+				}
+				if len(line) < x{
+					x = len(line)
+				}
+			case "enter":
+				// TODO borked
+				// TODO redesign idea
+				//	file IS a string (...\n...\n...\n)
+				//	x = file[@]
+				//	y = count(file[:x], "\n")
+				//	cx = x-findlast@(file[:x], "\n") // cursor x
+				if (y!=termy){
+					y++
+					if len(line)==0 || y == len(file){
+						file = append(file, "")
+					} else {
+						file[y] = ""
+					}
+					redraw()
+				}
+				line = file[y]
+				if len(line) < x{
+					x = len(line)
+				}
+			case "down":
+				if (y!=termy){
+					y++
+					if (len(file)<=y) {
+						y--
+					}
+					line = file[y]
+				}
+				if len(line) < x{
+					x = len(line)
+				}
 			case "space":
 				line+=" "
 				x++
@@ -86,9 +163,11 @@ func main(){
 				line = line[:x] + k + line[x:]
 				x++
 		}
+		file[y] = line
 	}
 	clear()
 	PS(line)
+	WriteFile("log", strings.Join(LOG, "\n"))
 
 	TerminEnd()
 	CursorMode("block")
