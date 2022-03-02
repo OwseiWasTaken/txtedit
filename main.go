@@ -48,7 +48,10 @@ func main(){
 
 	CursorMode("I-beam")
 	var prtln = func()(){
-		wprint(Win, y, 0, spf("%s%d %s ", strings.Repeat(" ", 3-yl()), y+1, line)) // +" " to clear removed chars
+		wprint(Win, y, 0,
+			spf("%s%d %s "/*the last char is here to clean deleted chars*/,
+			strings.Repeat(" ", 3-yl()), y+1, line),
+		)
 		wmove(Win, y, x+4)
 	}
 
@@ -74,6 +77,10 @@ func main(){
 			case "space":
 				line+=" "
 				x++
+			case "delete":
+				if (x!=len(line)) {
+					line = line[:x] + line[1+x:]
+				}
 			case "NULL":
 			default:
 				line = line[:x] + k + line[x:]
