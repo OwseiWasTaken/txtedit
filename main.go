@@ -43,8 +43,9 @@ var (
 	line string // line cont
 	file = []string{} // all lines
 
-	x int = 0// cursor pos in line
-	y int = 0// cursor pos in file
+	x int = 0 // cursor pos in line
+	y int = 0 // cursor pos in file
+	winoff Ordenate // win (view) offset
 
 	yl = func()(int){return len(spf("%v", y+1))} // len of line number
 
@@ -61,6 +62,7 @@ var (
 
 func redraw () () {
 	clear()
+	prtinfo()
 	for i:=0;i<len(file);i++{
 		wprint(Win, i, 0,
 			spf(
@@ -82,19 +84,29 @@ func Exec (c string) (string) {
 	return ""
 }
 
+func prtinfo()(){
+	wprint(Win, termy-1, 0,
+		spf("y:%d, x:%d", y, x),
+	)
+	wDrawLine(Win, termy-2, "█")
+}
+
+func prtln()(){
+	wprint(Win, y, 0,
+		spf("%s%d %s "/*the last char is here to clean deleted chars*/,
+		strings.Repeat(" ", 3-yl()), y+1, line),
+	)
+	prtinfo()
+	wmove(Win, y, x+4)
+}
+
+
 include "control"
 func main(){
 	// use termin
 	TerminInit()
 
 	CursorMode("I-beam")
-	var prtln = func()(){
-		wprint(Win, y, 0,
-			spf("%s%d %s "/*the last char is here to clean deleted chars*/,
-			strings.Repeat(" ", 3-yl()), y+1, line),
-		)
-		wmove(Win, y, x+4)
-	}
 
 	file = append(file, line)
 	for running{
@@ -136,7 +148,7 @@ func main(){
 					x = len(line)
 				}
 			case "enter":
-				if (y!=termy){
+				if (y!=(termy-3)){
 					if x == len(line) {
 						// dumb but it works
 						file = append(file[:y], append([]string{file[y]}, file[y:]...)...)
