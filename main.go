@@ -39,7 +39,6 @@ var (
 	k string // key
 	running bool = true // end loop
 	log []string // logging NULL ocs
-	tw string // line ToWrite (prtln func)
 )
 
 include "control"
@@ -49,8 +48,7 @@ func main(){
 
 	CursorMode("I-beam")
 	var prtln = func()(){
-		tw = spf("%s%d %s", strings.Repeat(" ", 3-yl()), y+1, line)
-		wprint(Win, y, 0, tw+" ") // +" " to clear removed chars
+		wprint(Win, y, 0, spf("%s%d %s ", strings.Repeat(" ", 3-yl()), y+1, line)) // +" " to clear removed chars
 		wmove(Win, y, x+4)
 	}
 
