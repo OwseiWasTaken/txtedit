@@ -140,6 +140,9 @@ func M_insert (k string) () {
 	switch (k){
 	case "esc":
 		mode = MI_NORMAL
+		if (x) != 0 {
+			x--
+		}
 		ReCur()
 	case "f1":
 	case "f2":
@@ -183,6 +186,17 @@ func M_insert (k string) () {
 		if len(line) < x{
 			x = len(line)
 		}
+	case "down":
+		if (y!=termy){
+			y++
+			if (len(file)<=y) {
+				y--
+			}
+			line = file[y]
+		}
+		if len(line) < x{
+			x = len(line)
+		}
 	case "enter":
 		if (y!=(termy-3)){
 			if x == len(line) {
@@ -208,17 +222,6 @@ func M_insert (k string) () {
 			if len(line) < x{
 				x = len(line)
 			}
-		}
-	case "down":
-		if (y!=termy){
-			y++
-			if (len(file)<=y) {
-				y--
-			}
-			line = file[y]
-		}
-		if len(line) < x{
-			x = len(line)
 		}
 	case "space":
 		line+=" "
@@ -319,13 +322,70 @@ func M_normal (k string) () {
 	switch (k) {
 	case ":":
 		ExecCmd(GetCmd())
+
 	case "i":
 		mode = MI_INSERT
 		ReCur()
-		x--
-	case "a":
+	case "I":
 		mode = MI_INSERT
 		ReCur()
+		x = 0
+	case "_":
+		x = 0
+	case "$":
+		x = len(line)-1
+	case "A":
+		mode = MI_INSERT
+		x = len(line)-1
+		ReCur()
+	case "a":
+		mode = MI_INSERT
+		if len(line) > x{
+			x++
+		}
+		ReCur()
+
+	case "delete", "x":
+		if (x!=len(line)) {
+			line = line[:x] + line[1+x:]
+		}
+		if x==len(line) && x != 0{
+			x--
+		}
+	case "X":
+		if (x!=0) {
+			line = line[:x-1] + line[x:]
+		}
+
+	case "h", "left":
+		if (x!=0) {
+			x--
+		}
+
+	case "l", "right":
+		if (x+1!=len(line))&&len(line) != 0 {
+			x++
+		}
+
+	case "k", "up":
+		if (y!=0){
+			y--
+			line = file[y]
+		}
+		if len(line) < x{
+			x = len(line)
+		}
+	case "j", "down":
+		if (y!=termy){
+			y++
+			if (len(file)<=y) {
+				y--
+			}
+			line = file[y]
+		}
+		if len(line) < x{
+			x = len(line)
+		}
 	}
 }
 
