@@ -47,8 +47,11 @@ const (
 )
 
 var (
+	// fancy shit
 	prtinfocl = color(200,200,200,17,17,17)
-	filename = "out.txt"
+	txtcolor = RGB(255,255,255)
+	dimcolor = RGB(50,50,50)
+	errinfocl = color(10,10,10, 255,50,50)
 
 	curtypes = map[int]string{
 		MI_INSERT : "I-beam",
@@ -66,6 +69,8 @@ var (
 		MI_REPLACE : color(255,164,0 , 170,170,170),
 	}
 
+	// important shit
+	filename = ""
 	line string // line cont
 	file = []string{} // all lines
 
@@ -74,6 +79,7 @@ var (
 	winoff Ordenate // win (view) offset
 
 	yl = func()(int){return len(spf("%v", y+1))} // len of line number
+	prterr = ""
 
 	k string // key
 	running bool = true // end loop
@@ -90,13 +96,23 @@ var (
 func redraw () () {
 	clear()
 	prtinfo()
-	for i:=0;i<len(file);i++{
-		wprint(Win, i, 0,
-			spf(
-				"%s%d %s",
-				strings.Repeat(" ", 3-(len(spf("%v", i+1)))), i+1, file[i],
-			),
-		)
+	fll := len(file)
+	for i:=0;i<termy;i++{
+		if i < fll{
+			wprint(Win, i, 0,
+				spf(
+					"%s%d %s",
+					strings.Repeat(" ", 3-(len(spf("%v", i+1)))), i+1, file[i],
+				),
+			)
+		} else {
+			wprint(Win, i, 0,
+				spf(
+					"  %s~%s",
+					dimcolor,txtcolor,
+				),
+			)
+		}
 	}
 	//prtln()
 	wmove(Win, y, x+4)
@@ -107,16 +123,34 @@ func prtinfo()(){
 	wuprint(Win, termy-2, 0, prtinfocl)
 
 	wDrawLine(Win, termy-2, " ")
-	wprint(Win, termy-2, 0,
-		spf(
-			"%s %s %s %s",
-			modcolor[mode], modnames[mode], prtinfocl, filename,
-		),
-	)
+	if prterr == "" {
+		if filename == ""{
+			wprint(Win, termy-2, 0,
+				spf(
+					"%s %s %s [no name]",
+					modcolor[mode], modnames[mode], prtinfocl,
+				),
+			)
+		} else {
+			wprint(Win, termy-2, 0,
+				spf(
+					"%s %s %s %s",
+					modcolor[mode], modnames[mode], prtinfocl, filename,
+				),
+			)
+		}
+	} else {
+		wprint(Win, termy-2, 0,
+			spf(
+				"%s %s %s%s",
+				modcolor[mode], modnames[mode], errinfocl, prterr,
+			),
+		)
+	}
 	ShowCursor()
 
 	// "disable" grey bkground
-	wuprint(Win, termy-2, termx, "\x1b[0m")
+	wuprint(Win, termy-2, termx, "\x1b[0m"+txtcolor)
 
 	wprint(Win, termy-1, 0,
 		spf(
@@ -250,22 +284,48 @@ func M_insert (k string) () {
 	}
 }
 
+func ReadAndSet (flname string) () {
+	file = strings.Split(ReadFile(flname), "\n")
+	PS(file)
+	line = file[0]
+	filename = flname
+	// reset
+	x = 0
+	y = 0
+	//exit(0)
+	redraw()
+}
+
 func ExecCmd ( ca []string ) () {
 	c := ca[0]
 	ca = ca[1:]
+	if c == ""{return}
 	switch (c) {
 	case "quit", "q":
 		running = false
+	case "e", "edit":
+		if len(ca) == 1 {
+			if exists(ca[0]) {
+				ReadAndSet(ca[0])
+			} else {
+				filename = ca[0]
+			}
+		}
 	case "write", "w":
 		if len(ca) != 0{
 			switch (len(ca)) {
 			case 1:
+				filename = ca[0]
 				WriteFile(ca[0], strings.Join(file, "\n"))
 			default:
 				WriteFile(ca[0], strings.Join(ca[1:], " "))
 			}
 		} else {
-			WriteFile(filename, strings.Join(file, "\n"))
+			if filename == "" {
+				errinfocl = "can't write without filename!"
+			} else {
+				WriteFile(filename, strings.Join(file, "\n"))
+			}
 		}
 	case "wq":
 		WriteFile(filename, strings.Join(file, "\n"))
@@ -277,10 +337,14 @@ func GetCmd () ([]string) {
 	c := "" // command
 	k := "" // key
 	nx := 0  // pos
+	prtinfo()
 	wDrawLine(Win, termy-1, " ")
-	wDrawLine(Win, termy-2, " ")
+	//wDrawLine(Win, termy-2, " ")
 	CursorMode(curtypes[MI_INSERT])
 	for {
+		prtinfo()
+		wDrawLine(Win, termy-1, " ")
+		//wDrawLine(Win, termy-2, " ")
 
 		wprint(Win, termy-1, 0,
 			spf(":%s ", c),
@@ -295,6 +359,10 @@ func GetCmd () ([]string) {
 				c = c[:nx-1] + c[nx:]
 				nx--
 			}
+		case "esc":
+			// clear cmd
+			wDrawLine(Win, termy-1, " ")
+			return []string{""}
 		case "space":
 			c+=" "
 			nx++
@@ -308,6 +376,8 @@ func GetCmd () ([]string) {
 			}
 		case "enter":
 			CursorMode(curtypes[MI_NORMAL])
+			// clear cmd
+			wDrawLine(Win, termy-1, " ")
 			return strings.Split(c, " ")
 		default:
 			if len(k) == 1{
@@ -320,7 +390,7 @@ func GetCmd () ([]string) {
 
 func M_normal (k string) () {
 	switch (k) {
-	case ":":
+	case ":", ";":
 		ExecCmd(GetCmd())
 
 	case "i":
@@ -397,15 +467,21 @@ func main(){
 	if argc != 0 {
 		switch (argc) {
 		case 1:
-			filename = argv[0]
+			// read and set file stuff
+			ReadAndSet(argv[0])
 		}
 	}
 	// use termin
 	TerminInit()
 
+	// use cur type
 	ReCur()
 
+	// len(file) = 1
 	file = append(file, line)
+
+	// draw ~ line
+	redraw()
 	for running{
 		prtln()
 		k = gtk(Win)
@@ -425,5 +501,4 @@ func main(){
 	CursorMode("block")
 	exit(0)
 }
-
 
