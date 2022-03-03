@@ -2,6 +2,9 @@
 //	· https://github.com/owseiwastaken/gutil
 //	· https://github.com/owseiwastaken/termin
 
+// TODO
+// screen scrolling (look at WinOff @ vars)
+
 
 package main
 
@@ -76,7 +79,7 @@ var (
 
 	x int = 0 // cursor pos in line
 	y int = 0 // cursor pos in file
-	winoff Ordenate // win (view) offset
+	WinOff int = 0 // win (view) offset (y)
 
 	yl = func()(int){return len(spf("%v", y+1))} // len of line number
 	prterr = ""
